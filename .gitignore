@@ -11,3 +11,4 @@ wheels/
 
 # Movies data set
 /data/
+cache/
