@@ -3,6 +3,9 @@ import pickle
 import string
 
 from collections import defaultdict
+from nltk.stem import PorterStemmer
+
+stemmer = PorterStemmer()
 
 
 def tokenize(text):
@@ -17,10 +20,10 @@ class InvertedIndex:
 
     def __add_document(self, doc_id, text):
         for token in tokenize(text):
-            self.index[token].add(doc_id)
+            self.index[stemmer.stem(token)].add(doc_id)
 
     def get_document(self, term):
-        return list(self.index[term.lower()])
+        return sorted(list(self.index[stemmer.stem(term).lower()]))
 
     def build(self, json):
         for item in json:
@@ -35,4 +38,12 @@ class InvertedIndex:
             pickle.dump(self.docmap, f)
 
     def load(self):
-        pass
+        try:
+            with open("./cache/index.pkl", "rb") as f:
+                self.index = pickle.load(f)
+            with open("./cache/docmap.pkl", "rb") as ff:
+                self.docmap = pickle.load(ff)
+        except FileNotFoundError as e:
+            print(f"Couldn't open {e.filename}")
+            raise e
+

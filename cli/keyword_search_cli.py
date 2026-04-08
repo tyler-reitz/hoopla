@@ -20,40 +20,38 @@ def main():
 
     args = parser.parse_args()
 
-    stemmer = PorterStemmer()
+    # stemmer = PorterStemmer()
 
     inverted_index = InvertedIndex()
 
     with open("data/movies.json") as f:
         data_set = json.load(f)
 
-    with open("data/stopwords.txt") as s:
-        stop_words = s.read().splitlines()
+    # with open("data/stopwords.txt") as s:
+    #     stop_words = s.read().splitlines()
 
     match args.command:
         case "build":
             inverted_index.build(data_set['movies'])
             inverted_index.save()
-            merida = inverted_index.get_document('merida')
-            print(f"First document for token 'merida' = {merida[0]}")
             for item in inverted_index.index:
                 print(item, inverted_index.index[item])
         case "search":
             print(f"Searching for: {args.query}")
-            results = [
-                movie
-                for movie in data_set['movies']
-                if any(
-                    query_part not in stop_words
-                    and stemmer.stem(query_part) in stemmer.stem(token)
-                    for query_part in tokenize(args.query)
-                    for token in tokenize(movie['title'])
-                )
-            ]
-            for i, result in enumerate(results):
-                if i > 4:
-                    break
-                print(f"{i+1} Movie title {result['title']}")
+            try:
+                inverted_index.load()
+                results = [
+                    inverted_index.docmap[doc]
+                    for token in tokenize(args.query)
+                    for doc in inverted_index.get_document(token)
+                ]
+                for i, result in enumerate(results):
+                    if i > 4:
+                        break
+                    print(f"{i+1} {result['title']} {result['id']}")
+            except:
+                print("Coudl not load index")
+                exit(1)
         case _:
             parser.print_help()
 
