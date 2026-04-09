@@ -13,10 +13,14 @@ def main():
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
+    subparsers.add_parser("build", help="Build movies inverted index")
+
     search_parser = subparsers.add_parser("search", help="Search movies using BM25")
     search_parser.add_argument("query", type=str, help="Search query")
 
-    search_parser = subparsers.add_parser("build", help="Build movies inverted index")
+    trmfrq_parser = subparsers.add_parser("tf", help="Get term frequency per document")
+    trmfrq_parser.add_argument("doc_id", type=str, help="Document ID")
+    trmfrq_parser.add_argument("term", type=str, help="Search term")
 
     args = parser.parse_args()
 
@@ -31,6 +35,10 @@ def main():
     #     stop_words = s.read().splitlines()
 
     match args.command:
+        case "tf":
+            inverted_index.load()
+            trmfrq = inverted_index.tf(args.doc_id, tokenize(args.term)[0])
+            print(trmfrq)
         case "build":
             inverted_index.build(data_set['movies'])
             inverted_index.save()

@@ -2,7 +2,7 @@ import os
 import pickle
 import string
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from nltk.stem import PorterStemmer
 
 stemmer = PorterStemmer()
@@ -13,14 +13,17 @@ def tokenize(text):
 
 class InvertedIndex:
     def __init__(self):
-        # map tokens to sets of doc IDs
         self.index = defaultdict(set)
-        # map doc IDs to docs
         self.docmap = defaultdict(list)
+        self.trmfrq = defaultdict(Counter)
+
+    def tf(self, doc_id, term):
+        return self.trmfrq[int(doc_id)][stemmer.stem(term)]
 
     def __add_document(self, doc_id, text):
         for token in tokenize(text):
             self.index[stemmer.stem(token)].add(doc_id)
+            self.trmfrq[doc_id][stemmer.stem(token)]+=1
 
     def get_document(self, term):
         return sorted(list(self.index[stemmer.stem(term).lower()]))
@@ -36,13 +39,17 @@ class InvertedIndex:
             pickle.dump(self.index, f)
         with open("./cache/docmap.pkl", "wb") as f:
             pickle.dump(self.docmap, f)
+        with open("./cache/trmfrq.pkl", "wb") as f:
+            pickle.dump(self.trmfrq, f)
 
     def load(self):
         try:
             with open("./cache/index.pkl", "rb") as f:
                 self.index = pickle.load(f)
-            with open("./cache/docmap.pkl", "rb") as ff:
-                self.docmap = pickle.load(ff)
+            with open("./cache/docmap.pkl", "rb") as f:
+                self.docmap = pickle.load(f)
+            with open("./cache/trmfrq.pkl", "rb") as f:
+                self.trmfrq = pickle.load(f)
         except FileNotFoundError as e:
             print(f"Couldn't open {e.filename}")
             raise e
