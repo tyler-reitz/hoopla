@@ -1,6 +1,7 @@
 import os
 import pickle
 import string
+import math
 
 from collections import Counter, defaultdict
 from nltk.stem import PorterStemmer
@@ -16,6 +17,9 @@ class InvertedIndex:
         self.index = defaultdict(set)
         self.docmap = defaultdict(list)
         self.trmfrq = defaultdict(Counter)
+
+    def idf(self, term):
+        return math.log((len(self.docmap) + 1) / (len(self.index[stemmer.stem(term)]) + 1)) 
 
     def tf(self, doc_id, term):
         return self.trmfrq[int(doc_id)][stemmer.stem(term)]
