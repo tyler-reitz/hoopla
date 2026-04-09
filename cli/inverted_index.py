@@ -18,6 +18,9 @@ class InvertedIndex:
         self.docmap = defaultdict(list)
         self.trmfrq = defaultdict(Counter)
 
+    def tfidf(self, doc_id, term):
+        return self.tf(doc_id, term) * self.idf(term)
+
     def idf(self, term):
         return math.log((len(self.docmap) + 1) / (len(self.index[stemmer.stem(term)]) + 1)) 
 

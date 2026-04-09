@@ -25,6 +25,10 @@ def main():
     idf_parser = subparsers.add_parser("idf", help="Get inverse document frequency")
     idf_parser.add_argument("term", type=str, help="Search term")
 
+    tfidf_parser = subparsers.add_parser("tfidf", help="Get tf-idf for a term")
+    tfidf_parser.add_argument("doc_id", type=str, help="Document ID")
+    tfidf_parser.add_argument("term", type=str, help="Search term")
+
     args = parser.parse_args()
 
     # stemmer = PorterStemmer()
@@ -38,6 +42,10 @@ def main():
     #     stop_words = s.read().splitlines()
 
     match args.command:
+        case "tfidf":
+            inverted_index.load()
+            tfidf = inverted_index.tfidf(args.doc_id, args.term)
+            print(f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tfidf:.2f}")
         case "idf":
             inverted_index.load()
             idf = inverted_index.idf(args.term)
