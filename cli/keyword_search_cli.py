@@ -29,6 +29,14 @@ def main():
     tfidf_parser.add_argument("doc_id", type=str, help="Document ID")
     tfidf_parser.add_argument("term", type=str, help="Search term")
 
+    bm25idf_parser = subparsers.add_parser("bm25idf", help="Search movies using BM25IDF")
+    bm25idf_parser.add_argument("term", type=str, help="Search query")
+
+    bm25tf_parser = subparsers.add_parser("bm25tf", help="Search movies using BM25TF")
+    bm25tf_parser.add_argument("doc_id", type=str, help="Document ID")
+    bm25tf_parser.add_argument("term", type=str, help="Search term")
+    bm25tf_parser.add_argument("k1", type=float, nargs='?', default=1.5, help="Tunable BM25 K1")
+
     args = parser.parse_args()
 
     # stemmer = PorterStemmer()
@@ -42,6 +50,12 @@ def main():
     #     stop_words = s.read().splitlines()
 
     match args.command:
+        case "bm25tf":
+            bm25tf = inverted_index.bm_25_tf(args.doc_id, args.term, args.k1)
+            print(f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}")
+        case "bm25idf":
+            bm25idf = inverted_index.bm_25_idf(args.term)
+            print(f"Bm25 IDF score of '{args.term}': {bm25idf:.2f}")
         case "tfidf":
             inverted_index.load()
             tfidf = inverted_index.tfidf(args.doc_id, args.term)

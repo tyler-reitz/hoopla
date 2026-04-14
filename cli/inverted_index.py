@@ -8,15 +8,35 @@ from nltk.stem import PorterStemmer
 
 stemmer = PorterStemmer()
 
+BM25_K1 = 1.5
+
 
 def tokenize(text):
     return text.lower().translate(str.maketrans("", "", string.punctuation)).split()
+
+def load(func):
+    def wrapper(self, *args, **kwargs):
+        self.load()
+        return func(self, *args, **kwargs)
+    return wrapper
 
 class InvertedIndex:
     def __init__(self):
         self.index = defaultdict(set)
         self.docmap = defaultdict(list)
         self.trmfrq = defaultdict(Counter)
+
+    @load
+    def bm_25_tf(self, doc_id, term, k1=BM25_K1):
+        tf = self.tf(doc_id, term)
+        bm25tf = (tf * (k1 + 1)) / (tf + k1)
+        return bm25tf
+
+    @load
+    def bm_25_idf(self, term):
+        N = len(self.docmap)
+        df = len(self.index[stemmer.stem(term)])
+        return math.log(((N - df + 0.5) / (df + 0.5) + 1))
 
     def tfidf(self, doc_id, term):
         return self.tf(doc_id, term) * self.idf(term)
@@ -60,4 +80,3 @@ class InvertedIndex:
         except FileNotFoundError as e:
             print(f"Couldn't open {e.filename}")
             raise e
-
