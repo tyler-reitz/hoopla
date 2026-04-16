@@ -9,6 +9,7 @@ from nltk.stem import PorterStemmer
 stemmer = PorterStemmer()
 
 BM25_K1 = 1.5
+BM25_B = 0.75
 
 
 def tokenize(text):
@@ -16,7 +17,8 @@ def tokenize(text):
 
 def load(func):
     def wrapper(self, *args, **kwargs):
-        self.load()
+        if not self.index or not self.docmap or not self.trmfrq or not self.doclens:
+            self.load()
         return func(self, *args, **kwargs)
     return wrapper
 
@@ -25,11 +27,16 @@ class InvertedIndex:
         self.index = defaultdict(set)
         self.docmap = defaultdict(list)
         self.trmfrq = defaultdict(Counter)
+        self.doclens = defaultdict(int)
+
+    def __avg_doc_len(self):
+        return sum(self.doclens.values()) / len(self.doclens) if self.doclens else 0
 
     @load
-    def bm_25_tf(self, doc_id, term, k1=BM25_K1):
+    def bm_25_tf(self, doc_id, term, k1=BM25_K1, b=BM25_B):
         tf = self.tf(doc_id, term)
-        bm25tf = (tf * (k1 + 1)) / (tf + k1)
+        lengh_norm = 1 - b + b * (self.doclens[int(doc_id)] / self.__avg_doc_len())
+        bm25tf = (tf * (k1 + 1)) / (tf + k1 * lengh_norm)
         return bm25tf
 
     @load
@@ -48,9 +55,11 @@ class InvertedIndex:
         return self.trmfrq[int(doc_id)][stemmer.stem(term)]
 
     def __add_document(self, doc_id, text):
-        for token in tokenize(text):
+        tokens = tokenize(text)
+        for token in tokens:
             self.index[stemmer.stem(token)].add(doc_id)
             self.trmfrq[doc_id][stemmer.stem(token)]+=1
+            self.doclens[doc_id]=len(tokens)
 
     def get_document(self, term):
         return sorted(list(self.index[stemmer.stem(term).lower()]))
@@ -68,6 +77,8 @@ class InvertedIndex:
             pickle.dump(self.docmap, f)
         with open("./cache/trmfrq.pkl", "wb") as f:
             pickle.dump(self.trmfrq, f)
+        with open("./cache/doclens.pkl", "wb") as f:
+            pickle.dump(self.doclens, f)
 
     def load(self):
         try:
@@ -77,6 +88,8 @@ class InvertedIndex:
                 self.docmap = pickle.load(f)
             with open("./cache/trmfrq.pkl", "rb") as f:
                 self.trmfrq = pickle.load(f)
+            with open("./cache/doclens.pkl", "rb") as f:
+                self.doclens = pickle.load(f)
         except FileNotFoundError as e:
             print(f"Couldn't open {e.filename}")
             raise e

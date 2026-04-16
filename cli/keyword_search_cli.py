@@ -36,6 +36,7 @@ def main():
     bm25tf_parser.add_argument("doc_id", type=str, help="Document ID")
     bm25tf_parser.add_argument("term", type=str, help="Search term")
     bm25tf_parser.add_argument("k1", type=float, nargs='?', default=1.5, help="Tunable BM25 K1")
+    bm25tf_parser.add_argument("b", type=float, nargs='?', default=0.75, help="Tunable BM25 B")
 
     args = parser.parse_args()
 
@@ -51,7 +52,7 @@ def main():
 
     match args.command:
         case "bm25tf":
-            bm25tf = inverted_index.bm_25_tf(args.doc_id, args.term, args.k1)
+            bm25tf = inverted_index.bm_25_tf(args.doc_id, args.term, args.k1, args.b)
             print(f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}")
         case "bm25idf":
             bm25idf = inverted_index.bm_25_idf(args.term)
