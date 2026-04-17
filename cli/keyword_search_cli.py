@@ -2,7 +2,6 @@ import argparse
 import json
 import string
 
-from nltk.stem import PorterStemmer
 from inverted_index import InvertedIndex
 
 
@@ -19,38 +18,42 @@ def main():
     search_parser.add_argument("query", type=str, help="Search query")
 
     tf_parser = subparsers.add_parser("tf", help="Get term frequency per document")
-    tf_parser.add_argument("doc_id", type=str, help="Document ID")
+    tf_parser.add_argument("doc_id", type=int, help="Document ID")
     tf_parser.add_argument("term", type=str, help="Search term")
 
     idf_parser = subparsers.add_parser("idf", help="Get inverse document frequency")
     idf_parser.add_argument("term", type=str, help="Search term")
 
     tfidf_parser = subparsers.add_parser("tfidf", help="Get tf-idf for a term")
-    tfidf_parser.add_argument("doc_id", type=str, help="Document ID")
+    tfidf_parser.add_argument("doc_id", type=int, help="Document ID")
     tfidf_parser.add_argument("term", type=str, help="Search term")
 
     bm25idf_parser = subparsers.add_parser("bm25idf", help="Search movies using BM25IDF")
     bm25idf_parser.add_argument("term", type=str, help="Search query")
 
     bm25tf_parser = subparsers.add_parser("bm25tf", help="Search movies using BM25TF")
-    bm25tf_parser.add_argument("doc_id", type=str, help="Document ID")
+    bm25tf_parser.add_argument("doc_id", type=int, help="Document ID")
     bm25tf_parser.add_argument("term", type=str, help="Search term")
     bm25tf_parser.add_argument("k1", type=float, nargs='?', default=1.5, help="Tunable BM25 K1")
     bm25tf_parser.add_argument("b", type=float, nargs='?', default=0.75, help="Tunable BM25 B")
 
-    args = parser.parse_args()
+    bm25_parser = subparsers.add_parser("bm25search", help="Search movies using full BM25 scoring")
+    bm25_parser.add_argument("query", type=str, help="Query to search for")
+    bm25_parser.add_argument("-n", "--limit", type=int, help="Limit to n results", default=5)
 
-    # stemmer = PorterStemmer()
+    args = parser.parse_args()
 
     inverted_index = InvertedIndex()
 
     with open("data/movies.json") as f:
         data_set = json.load(f)
 
-    # with open("data/stopwords.txt") as s:
-    #     stop_words = s.read().splitlines()
-
     match args.command:
+        case "bm25search":
+            matches = inverted_index.bm_25_search(args.query, args.limit)
+            for n, doc_id in enumerate(matches, 1):
+                doc = inverted_index.docmap[doc_id]
+                print(f"{n}. ({doc_id}) {doc['title']} - Score {matches[doc_id]:.2f}")
         case "bm25tf":
             bm25tf = inverted_index.bm_25_tf(args.doc_id, args.term, args.k1, args.b)
             print(f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}")
